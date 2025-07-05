@@ -11,13 +11,14 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from openai import OpenAI
 from astro_engine import AstroCalculator
+
 import asyncio
 
 # Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("bot.log"), logging.StreamHandler()]
+    handlers=[logging.FileHandler("bot.log", encoding="utf-8"), logging.StreamHandler()]
 )
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ load_dotenv()
 
 class Config:
     BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-    OPENROUTER_API_KEY = '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'
+    OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
     MODEL_NAME = "deepseek/deepseek-r1-0528:free"
     MAX_TOKENS = 2000
 
@@ -155,17 +156,12 @@ async def process_birth_place(message: Message, state: FSMContext):
 - Луна: {positions['planets']['moon']['sign']} ({positions['planets']['moon']['degree']:.1f}°)
 - Асцендент: {positions['planets']['ascendant']['sign']} ({positions['planets']['ascendant']['degree']:.1f}°)
 
-Дай подробную интерпретацию в формате:
-### Основные черты личности
-[анализ]
+Дай краткую, лаконичную интерпретацию натальной карты с фокусом на:
+- Основные черты (до 5 пунктов, кратко)
+- Эмоциональные особенности (до 3–5 пунктов)
+- 3 совета по развитию
 
-### Эмоциональные особенности
-[анализ]
-
-### Советы по развитию
-1. [совет]
-2. [совет]
-3. [совет]
+Форматируй красиво, с эмодзи и подзаголовками. Избегай длинных абзацев. Не пиши 'На основе предоставленных данных...'
 """
         # 3. Получаем интерпретацию
         interpretation = await get_ai_response(prompt)
