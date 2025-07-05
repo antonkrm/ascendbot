@@ -7,17 +7,21 @@ from typing import Dict, Any
 import logging
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s - %(levelname)s - %(message)s")
+
 
 class AstroCalculator:
+
     def __init__(self):
         self.geolocator = Nominatim(user_agent="ascend_bot_geocoder")
         self.tz_finder = TimezoneFinder()
         self.signs = [
-            "Овен", "Телец", "Близнецы", "Рак", "Лев", "Дева",
-            "Весы", "Скорпион", "Стрелец", "Козерог", "Водолей", "Рыбы"
+            "Овен", "Телец", "Близнецы", "Рак", "Лев", "Дева", "Весы",
+            "Скорпион", "Стрелец", "Козерог", "Водолей", "Рыбы"
         ]
-        swe.set_ephe_path('.')  # путь к эфемеридам (по умолчанию — текущая папка)
+        swe.set_ephe_path(
+            '.')  # путь к эфемеридам (по умолчанию — текущая папка)
 
     def get_coordinates_and_timezone(self, place: str) -> tuple:
         try:
@@ -31,7 +35,9 @@ class AstroCalculator:
             if not timezone_str:
                 raise ValueError("Часовой пояс не найден")
 
-            logger.info(f"Место: {place}, Координаты: {lat}, {lon}, Таймзона: {timezone_str}")
+            logger.info(
+                f"Место: {place}, Координаты: {lat}, {lon}, Таймзона: {timezone_str}"
+            )
             return lat, lon, timezone_str
         except Exception as e:
             logger.error(f"Ошибка геокодинга/таймзоны: {e}")
@@ -46,7 +52,8 @@ class AstroCalculator:
         degree = lon % 30
         return {"sign": sign, "degree": degree}
 
-    def get_ascendant(self, jd: float, lat: float, lon: float) -> Dict[str, Any]:
+    def get_ascendant(self, jd: float, lat: float,
+                      lon: float) -> Dict[str, Any]:
         try:
             houses, ascmc = swe.houses(jd, lat, lon, b'P')  # P — Placidus
             asc = ascmc[0]
@@ -57,10 +64,12 @@ class AstroCalculator:
             logger.error(f"Ошибка расчета асцендента: {e}")
             raise
 
-    def calculate(self, date_str: str, time_str: str, place: str) -> Dict[str, Any]:
+    def calculate(self, date_str: str, time_str: str,
+                  place: str) -> Dict[str, Any]:
         try:
             # Преобразуем дату и время
-            dt_naive = datetime.strptime(f"{date_str} {time_str}", "%d.%m.%Y %H:%M")
+            dt_naive = datetime.strptime(f"{date_str} {time_str}",
+                                         "%d.%m.%Y %H:%M")
             lat, lon, tz_str = self.get_coordinates_and_timezone(place)
 
             tz = pytz.timezone(tz_str)
@@ -92,3 +101,31 @@ class AstroCalculator:
         except Exception as e:
             logger.exception("Ошибка общего расчета")
             raise ValueError(f"Ошибка общего расчета: {str(e)}")
+
+    def calculate_compatibility(self, person1: dict, person2: dict) -> dict:
+        """
+        person1 и person2 — словари с ключами: date_str, time_str, place.
+        Возвращает позиции планет (солнце, луна, асцендент) для каждого,
+        а также простую оценку совпадений по знакам.
+        """
+        data1 = self.calculate(person1['date_str'], person1['time_str'],
+                               person1['place'])
+        data2 = self.calculate(person2['date_str'], person2['time_str'],
+                               person2['place'])
+
+        matches = {
+            'sun':
+            data1['planets']['sun']['sign'] == data2['planets']['sun']['sign'],
+            'moon':
+            data1['planets']['moon']['sign'] == data2['planets']['moon']
+            ['sign'],
+            'ascendant':
+            data1['planets']['ascendant']['sign'] == data2['planets']
+            ['ascendant']['sign'],
+        }
+
+        return {
+            "person1": data1['planets'],
+            "person2": data2['planets'],
+            "matches": matches
+        }
