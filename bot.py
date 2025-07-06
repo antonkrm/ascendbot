@@ -305,6 +305,7 @@ async def comp_birth_place_2(message: Message, state: FSMContext):
             return
 
         await state.update_data(birth_place_2=place_2)
+        user_data = await state.get_data()
 
         # Запускаем расчет совместимости
         pos1 = astro.calculate(user_data['birth_date_1'],
